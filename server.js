@@ -20,36 +20,20 @@ function salvarDados(dados) {
 }
 
 const server = http.createServer((req, res) => {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
-  // Servir arquivos estáticos
-  if (req.method === 'GET' && !req.url.startsWith('/api')) {
-    let filePath = req.url === '/' ? '/index.html' : req.url;
-    filePath = path.join(__dirname, filePath);
-    if (fs.existsSync(filePath)) {
-      const ext = path.extname(filePath);
-      const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript' };
-      res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });
-      res.end(fs.readFileSync(filePath));
-    } else {
-      res.writeHead(404); res.end('Not found');
-    }
-    return;
-  }
-
-  // API GET - buscar todos os dados
+  // API GET
   if (req.method === 'GET' && req.url === '/api/dados') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(lerDados()));
     return;
   }
 
-  // API POST - salvar todos os dados
+  // API POST
   if (req.method === 'POST' && req.url === '/api/dados') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -63,6 +47,35 @@ const server = http.createServer((req, res) => {
         res.writeHead(400); res.end('Erro ao salvar');
       }
     });
+    return;
+  }
+
+  // Servir arquivos estáticos
+  if (req.method === 'GET') {
+    let filePath = req.url === '/' ? 'index.html' : req.url.replace(/^\//, '');
+    filePath = path.join(__dirname, filePath);
+
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath);
+      const types = {
+        '.html': 'text/html; charset=utf-8',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.json': 'application/json'
+      };
+      res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });
+      res.end(fs.readFileSync(filePath));
+    } else {
+      // Qualquer rota desconhecida retorna o index.html
+      const indexPath = path.join(__dirname, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(fs.readFileSync(indexPath));
+      } else {
+        res.writeHead(404);
+        res.end('index.html não encontrado');
+      }
+    }
     return;
   }
 
