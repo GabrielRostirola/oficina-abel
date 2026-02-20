@@ -1,25 +1,45 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { MongoClient } = require('mongodb');
 
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'dados.json');
+const MONGODB_URL = process.env.MONGODB_URL || 'mongodb+srv://gabriel:lovemall1@cluster0.llgibc1.mongodb.net/oficina?retryWrites=true&w=majority';
 
-// Inicializa o arquivo de dados se não existir
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify({ clientes: [], servicos: [], pagamentos: [], gastos: [] }, null, 2));
+let db;
+
+// Conectar ao MongoDB
+MongoClient.connect(MONGODB_URL)
+  .then(client => {
+    db = client.db('oficina');
+    console.log('✅ Conectado ao MongoDB!');
+  })
+  .catch(err => {
+    console.error('❌ Erro ao conectar MongoDB:', err.message);
+  });
+
+async function lerDados() {
+  try {
+    const doc = await db.collection('dados').findOne({ _id: 'principal' });
+    if (doc) {
+      delete doc._id;
+      return doc;
+    }
+    return { clientes: [], servicos: [], pagamentos: [], gastos: [] };
+  } catch {
+    return { clientes: [], servicos: [], pagamentos: [], gastos: [] };
+  }
 }
 
-function lerDados() {
-  try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-  catch { return { clientes: [], servicos: [], pagamentos: [], gastos: [] }; }
+async function salvarDados(dados) {
+  await db.collection('dados').updateOne(
+    { _id: 'principal' },
+    { $set: { ...dados, _id: 'principal' } },
+    { upsert: true }
+  );
 }
 
-function salvarDados(dados) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(dados, null, 2));
-}
-
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -28,8 +48,9 @@ const server = http.createServer((req, res) => {
 
   // API GET
   if (req.method === 'GET' && req.url === '/api/dados') {
+    const dados = await lerDados();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(lerDados()));
+    res.end(JSON.stringify(dados));
     return;
   }
 
@@ -37,14 +58,14 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/dados') {
     let body = '';
     req.on('data', chunk => body += chunk);
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const dados = JSON.parse(body);
-        salvarDados(dados);
+        await salvarDados(dados);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
-      } catch {
-        res.writeHead(400); res.end('Erro ao salvar');
+      } catch (e) {
+        res.writeHead(400); res.end('Erro ao salvar: ' + e.message);
       }
     });
     return;
@@ -66,7 +87,6 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });
       res.end(fs.readFileSync(filePath));
     } else {
-      // Qualquer rota desconhecida retorna o index.html
       const indexPath = path.join(__dirname, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
