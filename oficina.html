@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oficina Mecânica do Abel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #e8a020;
+    --accent2: #ff6b35;
+    --text: #e8e8f0;
+    --text-muted: #7a7a9a;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --blue: #3498db;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Rajdhani',sans-serif; font-size:16px; overflow-x:hidden; }
+
+  /* ---- LOGIN ---- */
+  #loginScreen {
+    position:fixed; inset:0; background:var(--bg); z-index:1000;
+    display:flex; align-items:center; justify-content:center;
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(232,160,32,0.07) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, rgba(255,107,53,0.05) 0%, transparent 50%);
+  }
+  .login-box {
+    background:var(--surface); border:1px solid var(--border);
+    padding:48px 40px; width:380px; position:relative;
+    box-shadow: 0 0 60px rgba(232,160,32,0.08), 0 0 0 1px rgba(232,160,32,0.05);
+  }
+  .login-box::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+  }
+  .login-logo { text-align:center; margin-bottom:32px; }
+  .login-logo .icon { font-size:48px; margin-bottom:8px; }
+  .login-logo h1 { font-family:'Bebas Neue'; font-size:28px; letter-spacing:2px; color:var(--accent); line-height:1.1; }
+  .login-logo p { color:var(--text-muted); font-size:13px; letter-spacing:1px; }
+  .form-group { margin-bottom:20px; }
+  .form-group label { display:block; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .form-group input {
+    width:100%; padding:12px 16px; background:var(--bg); border:1px solid var(--border);
+    color:var(--text); font-family:'Rajdhani'; font-size:15px;
+    outline:none; transition:border-color 0.2s;
+  }
+  .form-group input:focus { border-color:var(--accent); }
+  .btn-login {
+    width:100%; padding:14px; background:linear-gradient(135deg,var(--accent2),var(--accent));
+    border:none; color:#000; font-family:'Bebas Neue'; font-size:20px;
+    letter-spacing:2px; cursor:pointer; transition:opacity 0.2s;
+  }
+  .btn-login:hover { opacity:0.9; }
+  .login-error { color:var(--red); font-size:13px; text-align:center; margin-top:12px; display:none; }
+
+  /* ---- MAIN APP ---- */
+  #app { display:none; min-height:100vh; }
+  .topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 24px; display:flex; align-items:center; gap:20px;
+    position:sticky; top:0; z-index:100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+  .topbar-logo { font-family:'Bebas Neue'; font-size:22px; color:var(--accent); letter-spacing:2px; white-space:nowrap; padding:16px 0; }
+  .topbar-logo span { color:var(--accent2); }
+  .nav-tabs { display:flex; gap:2px; flex:1; overflow-x:auto; }
+  .nav-tab {
+    padding:18px 18px; font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    font-weight:600; cursor:pointer; border-bottom:2px solid transparent;
+    color:var(--text-muted); white-space:nowrap; transition:all 0.2s; border:none;
+    background:transparent; font-family:'Rajdhani'; position:relative;
+  }
+  .nav-tab:hover { color:var(--text); }
+  .nav-tab.active { color:var(--accent); border-bottom:2px solid var(--accent); }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+  .topbar-date { font-size:12px; color:var(--text-muted); font-family:'Share Tech Mono'; }
+  .btn-logout { padding:8px 14px; background:transparent; border:1px solid var(--border); color:var(--text-muted); font-family:'Rajdhani'; font-size:12px; letter-spacing:1px; cursor:pointer; transition:all 0.2s; }
+  .btn-logout:hover { border-color:var(--red); color:var(--red); }
+
+  /* ---- CONTENT ---- */
+  .page { display:none; padding:28px 32px; max-width:1400px; margin:0 auto; }
+  .page.active { display:block; }
+  .page-title { font-family:'Bebas Neue'; font-size:32px; letter-spacing:3px; color:var(--accent); margin-bottom:4px; }
+  .page-sub { color:var(--text-muted); font-size:13px; letter-spacing:1px; margin-bottom:28px; }
+
+  /* CARDS */
+  .cards-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:32px; }
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    padding:20px 24px; position:relative; overflow:hidden;
+  }
+  .card::after { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent); }
+  .card.green::after { background:var(--green); }
+  .card.red::after { background:var(--red); }
+  .card.blue::after { background:var(--blue); }
+  .card.orange::after { background:var(--accent2); }
+  .card-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .card-value { font-family:'Bebas Neue'; font-size:32px; color:var(--text); }
+  .card-value.money { color:var(--green); }
+  .card-value.red { color:var(--red); }
+  .card-value.blue { color:var(--blue); }
+
+  /* TABLE */
+  .table-wrap { background:var(--surface); border:1px solid var(--border); overflow:auto; }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:var(--surface2); }
+  th { padding:12px 16px; text-align:left; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border); }
+  td { padding:12px 16px; border-bottom:1px solid rgba(42,42,58,0.5); font-size:14px; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(232,160,32,0.03); }
+  .badge {
+    display:inline-block; padding:3px 10px; font-size:11px; letter-spacing:1px;
+    text-transform:uppercase; font-weight:700; border-radius:2px;
+  }
+  .badge-green { background:rgba(46,204,113,0.15); color:var(--green); }
+  .badge-red { background:rgba(231,76,60,0.15); color:var(--red); }
+  .badge-yellow { background:rgba(232,160,32,0.15); color:var(--accent); }
+
+  /* FORMS */
+  .form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:16px; }
+  .field label { display:block; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+  .field input, .field select, .field textarea {
+    width:100%; padding:10px 14px; background:var(--bg); border:1px solid var(--border);
+    color:var(--text); font-family:'Rajdhani'; font-size:14px; outline:none; transition:border-color 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); }
+  .field select option { background:var(--bg); }
+  .field textarea { resize:vertical; min-height:80px; }
+
+  /* BUTTONS */
+  .btn { padding:10px 20px; border:none; cursor:pointer; font-family:'Rajdhani'; font-size:13px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; transition:all 0.2s; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#000; }
+  .btn-primary:hover { opacity:0.85; }
+  .btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:rgba(231,76,60,0.15); border:1px solid var(--red); color:var(--red); }
+  .btn-danger:hover { background:var(--red); color:#fff; }
+  .btn-success { background:rgba(46,204,113,0.15); border:1px solid var(--green); color:var(--green); }
+  .btn-success:hover { background:var(--green); color:#000; }
+  .btn-sm { padding:6px 12px; font-size:11px; }
+
+  /* SECTION */
+  .section { background:var(--surface); border:1px solid var(--border); padding:24px; margin-bottom:24px; }
+  .section-title { font-family:'Bebas Neue'; font-size:18px; letter-spacing:2px; color:var(--accent); margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); width:100%; max-width:600px; max-height:90vh; overflow-y:auto; position:relative; }
+  .modal::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
+  .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .modal-header h3 { font-family:'Bebas Neue'; font-size:20px; letter-spacing:2px; color:var(--accent); }
+  .modal-close { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; }
+  .modal-close:hover { color:var(--red); }
+  .modal-body { padding:24px; }
+  .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; }
+
+  /* PRINT */
+  @media print {
+    body { background:#fff; color:#000; }
+    .topbar, .nav-tabs, .page-title, .page-sub, .cards-row, .btn, #app > *:not(.page) { display:none!important; }
+    #printArea { display:block!important; }
+    .no-print { display:none!important; }
+  }
+  #printArea { display:none; }
+
+  /* Receipt */
+  .receipt { background:#fff; color:#000; padding:40px; max-width:600px; margin:0 auto; font-family:'Rajdhani',sans-serif; }
+  .receipt-header { text-align:center; border-bottom:2px solid #000; padding-bottom:16px; margin-bottom:16px; }
+  .receipt-header h1 { font-family:'Bebas Neue'; font-size:28px; letter-spacing:2px; }
+  .receipt-header p { font-size:13px; color:#555; }
+  .receipt-info { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .receipt-info div { font-size:14px; }
+  .receipt-info strong { font-weight:700; }
+  .receipt-table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+  .receipt-table th { background:#000; color:#fff; padding:8px 12px; text-align:left; font-size:12px; letter-spacing:1px; }
+  .receipt-table td { padding:8px 12px; border-bottom:1px solid #ddd; font-size:13px; }
+  .receipt-total { text-align:right; border-top:2px solid #000; padding-top:12px; }
+  .receipt-total .total-line { display:flex; justify-content:space-between; margin-bottom:4px; font-size:14px; }
+  .receipt-total .grand { font-family:'Bebas Neue'; font-size:22px; }
+  .receipt-footer { text-align:center; margin-top:20px; font-size:12px; color:#777; border-top:1px solid #ddd; padding-top:12px; }
+
+  /* DASHBOARD specific */
+  .progress-bar { background:var(--border); height:8px; border-radius:0; margin-top:8px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width 0.5s; }
+  .list-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .list-item:last-child { border-bottom:none; }
+
+  /* Scroll */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+
+  /* Tabs inside page */
+  .inner-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:24px; }
+  .inner-tab { padding:10px 20px; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; color:var(--text-muted); background:transparent; border-top:none; border-left:none; border-right:none; font-family:'Rajdhani'; transition:all 0.2s; }
+  .inner-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .inner-page { display:none; }
+  .inner-page.active { display:block; }
+
+  .alert { padding:12px 16px; margin-bottom:16px; font-size:13px; }
+  .alert-success { background:rgba(46,204,113,0.1); border:1px solid var(--green); color:var(--green); }
+  .alert-error { background:rgba(231,76,60,0.1); border:1px solid var(--red); color:var(--red); }
+
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+  .empty-state .icon { font-size:48px; margin-bottom:12px; }
+  .empty-state p { font-size:14px; }
+
+  .client-card {
+    background:var(--surface); border:1px solid var(--border);
+    padding:20px; margin-bottom:12px; cursor:pointer;
+    transition:border-color 0.2s; position:relative;
+  }
+  .client-card:hover { border-color:var(--accent); }
+  .client-card .cc-name { font-family:'Bebas Neue'; font-size:20px; letter-spacing:1px; color:var(--text); }
+  .client-card .cc-truck { font-size:13px; color:var(--text-muted); margin-top:2px; }
+  .client-card .cc-plate { position:absolute; top:20px; right:20px; font-family:'Share Tech Mono'; font-size:14px; background:var(--accent); color:#000; padding:4px 10px; font-weight:700; }
+  .client-card .cc-total { font-size:18px; color:var(--green); font-weight:700; margin-top:8px; }
+
+  .payment-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; padding:16px; background:var(--surface2); border:1px solid var(--border); margin-bottom:16px; }
+  .payment-label { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+  .payment-value { font-family:'Bebas Neue'; font-size:24px; }
+  .payment-value.green { color:var(--green); }
+  .payment-value.red { color:var(--red); }
+  .payment-value.blue { color:var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🔧</div>
+      <h1>Oficina Mecânica<br>do Abel</h1>
+      <p>SISTEMA DE GESTÃO</p>
+    </div>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" id="loginUser" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" onclick="doLogin()">ENTRAR</button>
+    <div class="login-error" id="loginError">❌ Usuário ou senha incorretos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">⚙️ <span>OFICINA</span> DO ABEL</div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard')">📊 Dashboard</button>
+      <button class="nav-tab" onclick="showPage('clientes')">👤 Clientes</button>
+      <button class="nav-tab" onclick="showPage('servicos')">🔧 Serviços</button>
+      <button class="nav-tab" onclick="showPage('pagamentos')">💰 Pagamentos</button>
+      <button class="nav-tab" onclick="showPage('gastos')">📋 Gastos</button>
+      <button class="nav-tab" onclick="showPage('relatorios')">📄 Relatórios</button>
+    </nav>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topDate"></span>
+      <button class="btn-logout" onclick="doLogout()">SAIR</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-title">PAINEL PRINCIPAL</div>
+    <div class="page-sub">Visão geral da oficina</div>
+    <div class="cards-row" id="dashCards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="section">
+        <div class="section-title">Últimos Clientes</div>
+        <div id="dashClientes"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Contas em Aberto</div>
+        <div id="dashAberto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="page" id="page-clientes">
+    <div class="page-title">CLIENTES</div>
+    <div class="page-sub">Cadastro e gerenciamento de clientes</div>
+    <div class="section">
+      <div class="section-title">Novo Cliente</div>
+      <div class="form-row">
+        <div class="field"><label>Nome do Cliente</label><input type="text" id="cliNome" placeholder="Nome completo"></div>
+        <div class="field"><label>Telefone</label><input type="text" id="cliTel" placeholder="(00) 00000-0000"></div>
+        <div class="field"><label>Modelo do Caminhão</label><input type="text" id="cliCaminhao" placeholder="Ex: Volvo FH 460"></div>
+        <div class="field"><label>Placa do Caminhão</label><input type="text" id="cliPlaca" placeholder="ABC-1234" style="text-transform:uppercase"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Ano do Veículo</label><input type="text" id="cliAno" placeholder="2022"></div>
+        <div class="field"><label>Cor</label><input type="text" id="cliCor" placeholder="Branco"></div>
+        <div class="field"><label>Observações</label><input type="text" id="cliObs" placeholder="Informações adicionais"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addCliente()">+ CADASTRAR CLIENTE</button>
+    </div>
+    <div class="section">
+      <div class="section-title">Clientes Cadastrados</div>
+      <input type="text" id="cliSearch" placeholder="🔍 Buscar cliente..." oninput="renderClientes()" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:Rajdhani;font-size:14px;outline:none;margin-bottom:16px;">
+      <div id="clientesList"></div>
+    </div>
+  </div>
+
+  <!-- SERVICOS -->
+  <div class="page" id="page-servicos">
+    <div class="page-title">SERVIÇOS</div>
+    <div class="page-sub">Adicionar e gerenciar serviços por cliente</div>
+    <div class="section">
+      <div class="section-title">Adicionar Serviço</div>
+      <div class="form-row">
+        <div class="field"><label>Cliente</label>
+          <select id="srvCliente" onchange="updatePlaca()">
+            <option value="">Selecione um cliente...</option>
+          </select>
+        </div>
+        <div class="field"><label>Placa (auto)</label><input type="text" id="srvPlaca" readonly placeholder="Automático" style="opacity:0.6"></div>
+        <div class="field"><label>Data do Serviço</label><input type="date" id="srvData"></div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="grid-column:1/-1"><label>Descrição do Serviço</label><textarea id="srvDesc" placeholder="Descreva o serviço realizado..."></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Valor (R$)</label><input type="number" id="srvValor" placeholder="0,00" min="0" step="0.01"></div>
+        <div class="field"><label>Peças Utilizadas</label><input type="text" id="srvPecas" placeholder="Rolamento, correia..."></div>
+        <div class="field"><label>Mecânico Responsável</label><input type="text" id="srvMecanico" placeholder="Nome do mecânico"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addServico()">+ ADICIONAR SERVIÇO</button>
+    </div>
+    <div class="section">
+      <div class="section-title">Serviços por Cliente</div>
+      <div class="field" style="margin-bottom:16px"><label>Filtrar por Cliente</label>
+        <select id="srvFiltro" onchange="renderServicos()"><option value="">Todos os clientes</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Cliente</th><th>Placa</th><th>Serviço</th><th>Peças</th><th>Mecânico</th><th>Valor</th><th>Ações</th></tr></thead>
+          <tbody id="servicosTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGAMENTOS -->
+  <div class="page" id="page-pagamentos">
+    <div class="page-title">PAGAMENTOS</div>
+    <div class="page-sub">Controle financeiro por cliente</div>
+    <div class="field" style="margin-bottom:24px;max-width:400px"><label>Selecionar Cliente</label>
+      <select id="pagCliente" onchange="renderPagamento()"><option value="">Selecione um cliente...</option></select>
+    </div>
+    <div id="pagamentoArea"></div>
+  </div>
+
+  <!-- GASTOS -->
+  <div class="page" id="page-gastos">
+    <div class="page-title">GASTOS</div>
+    <div class="page-sub">Controle de despesas da oficina</div>
+    <div class="section">
+      <div class="section-title">Registrar Gasto</div>
+      <div class="form-row">
+        <div class="field"><label>Categoria</label>
+          <select id="gastoCateg">
+            <option>Combustível</option>
+            <option>Peças</option>
+            <option>Funcionário</option>
+            <option>Aluguel</option>
+            <option>Energia Elétrica</option>
+            <option>Água</option>
+            <option>Ferramentas</option>
+            <option>Manutenção</option>
+            <option>Impostos</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="field"><label>Descrição</label><input type="text" id="gastoDesc" placeholder="Descreva o gasto..."></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" id="gastoValor" placeholder="0,00" min="0" step="0.01"></div>
+        <div class="field"><label>Data</label><input type="date" id="gastoData"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addGasto()">+ REGISTRAR GASTO</button>
+    </div>
+    <div class="cards-row" id="gastoCards"></div>
+    <div class="section">
+      <div class="section-title">Histórico de Gastos</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div class="field" style="min-width:200px"><label>Filtrar por Categoria</label>
+          <select id="gastoFiltro" onchange="renderGastos()"><option value="">Todas</option></select>
+        </div>
+        <div class="field" style="min-width:200px"><label>Mês</label>
+          <select id="gastoMes" onchange="renderGastos()"></select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr></thead>
+          <tbody id="gastosTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATORIOS -->
+  <div class="page" id="page-relatorios">
+    <div class="page-title">RELATÓRIOS</div>
+    <div class="page-sub">Impressão de notas e resumos</div>
+    <div class="section">
+      <div class="section-title">Gerar Nota do Cliente</div>
+      <div class="form-row" style="max-width:600px">
+        <div class="field"><label>Selecionar Cliente</label>
+          <select id="relCliente" onchange="previewNota()"><option value="">Selecione...</option></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="imprimirNota()">🖨️ IMPRIMIR NOTA</button>
+    </div>
+    <div id="notaPreview"></div>
+  </div>
+
+</div>
+
+<!-- MODAL EDITAR SERVIÇO -->
+<div class="modal-overlay" id="modalEditServico">
+  <div class="modal">
+    <div class="modal-header"><h3>EDITAR SERVIÇO</h3><button class="modal-close" onclick="closeModal('modalEditServico')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editSrvId">
+      <div class="form-row">
+        <div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="editSrvDesc"></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Valor (R$)</label><input type="number" id="editSrvValor" step="0.01"></div>
+        <div class="field"><label>Peças</label><input type="text" id="editSrvPecas"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditServico')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditServico()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modalEditCliente">
+  <div class="modal">
+    <div class="modal-header"><h3>EDITAR CLIENTE</h3><button class="modal-close" onclick="closeModal('modalEditCliente')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editCliId">
+      <div class="form-row">
+        <div class="field"><label>Nome</label><input type="text" id="editCliNome"></div>
+        <div class="field"><label>Telefone</label><input type="text" id="editCliTel"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Caminhão</label><input type="text" id="editCliCaminhao"></div>
+        <div class="field"><label>Placa</label><input type="text" id="editCliPlaca"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Ano</label><input type="text" id="editCliAno"></div>
+        <div class="field"><label>Cor</label><input type="text" id="editCliCor"></div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="grid-column:1/-1"><label>Observações</label><input type="text" id="editCliObs"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditCliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditCliente()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="printArea"></div>
+
+<script>
+// ---- DATA ----
+let data = {
+  clientes: [],
+  servicos: [],
+  pagamentos: [],
+  gastos: []
+};
+
+function save() { localStorage.setItem('oficina_abel', JSON.stringify(data)); }
+function load() {
+  const d = localStorage.getItem('oficina_abel');
+  if(d) data = JSON.parse(d);
+}
+load();
+
+function uid() { return Date.now() + Math.random().toString(36).substr(2,5); }
+function fmt(n) { return 'R$ ' + Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+
+// ---- LOGIN ----
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if(u === 'gabriel' && p === 'lovemall1') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+function doLogout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ---- NAV ----
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='servicos') renderServicoSelects();
+  if(id==='pagamentos') renderPagamentoSelect();
+  if(id==='gastos') { renderGastos(); renderGastoCards(); renderGastoFiltros(); }
+  if(id==='relatorios') renderRelatorioSelect();
+}
+
+// ---- INIT ----
+function initApp() {
+  // date
+  const d = new Date();
+  document.getElementById('topDate').textContent = d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  // set today on inputs
+  document.getElementById('srvData').value = today();
+  document.getElementById('gastoData').value = today();
+  renderDashboard();
+  renderClientes();
+  renderServicoSelects();
+  renderServicos();
+  renderPagamentoSelect();
+  renderGastos();
+  renderGastoCards();
+  renderGastoFiltros();
+  renderRelatorioSelect();
+}
+
+// ---- DASHBOARD ----
+function renderDashboard() {
+  const mes = new Date().getMonth();
+  const ano = new Date().getFullYear();
+  const servMes = data.servicos.filter(s => {
+    const d = new Date(s.data+'T12:00:00');
+    return d.getMonth()===mes && d.getFullYear()===ano;
+  });
+  const totalMes = servMes.reduce((a,s) => a+Number(s.valor),0);
+  const totalGeral = data.servicos.reduce((a,s) => a+Number(s.valor),0);
+  const totalGastosMes = data.gastos.filter(g => {
+    const d = new Date(g.data+'T12:00:00');
+    return d.getMonth()===mes && d.getFullYear()===ano;
+  }).reduce((a,g) => a+Number(g.valor),0);
+  const lucroMes = totalMes - totalGastosMes;
+
+  // pagamentos
+  let totalPago = 0, totalDevendo = 0;
+  data.clientes.forEach(c => {
+    const cSrv = data.servicos.filter(s => s.clienteId===c.id);
+    const totalSrv = cSrv.reduce((a,s)=>a+Number(s.valor),0);
+    const pag = data.pagamentos.find(p => p.clienteId===c.id);
+    const pago = pag ? Number(pag.pago) : 0;
+    totalPago += pago;
+    totalDevendo += Math.max(0, totalSrv - pago);
+  });
+
+  document.getElementById('dashCards').innerHTML = `
+    <div class="card"><div class="card-label">Faturamento do Mês</div><div class="card-value money">${fmt(totalMes)}</div></div>
+    <div class="card green"><div class="card-label">Lucro do Mês</div><div class="card-value ${lucroMes>=0?'money':'red'}">${fmt(lucroMes)}</div></div>
+    <div class="card red"><div class="card-label">Gastos do Mês</div><div class="card-value red">${fmt(totalGastosMes)}</div></div>
+    <div class="card blue"><div class="card-label">Total Geral de Serviços</div><div class="card-value blue">${fmt(totalGeral)}</div></div>
+    <div class="card"><div class="card-label">Clientes Cadastrados</div><div class="card-value">${data.clientes.length}</div></div>
+    <div class="card orange"><div class="card-label">A Receber</div><div class="card-value" style="color:var(--accent)">${fmt(totalDevendo)}</div></div>
+  `;
+
+  // last clients
+  const lastCli = [...data.clientes].reverse().slice(0,5);
+  document.getElementById('dashClientes').innerHTML = lastCli.length ? lastCli.map(c => {
+    const t = data.servicos.filter(s=>s.clienteId===c.id).reduce((a,s)=>a+Number(s.valor),0);
+    return `<div class="list-item"><div><div style="font-weight:700">${c.nome}</div><div style="font-size:12px;color:var(--text-muted)">${c.caminhao} · ${c.placa}</div></div><div style="color:var(--green);font-weight:700">${fmt(t)}</div></div>`;
+  }).join('') : '<div class="empty-state"><p>Nenhum cliente cadastrado</p></div>';
+
+  // em aberto
+  const emAberto = data.clientes.filter(c => {
+    const t = data.servicos.filter(s=>s.clienteId===c.id).reduce((a,s)=>a+Number(s.valor),0);
+    const pag = data.pagamentos.find(p=>p.clienteId===c.id);
+    const pago = pag ? Number(pag.pago) : 0;
+    return t - pago > 0;
+  });
+  document.getElementById('dashAberto').innerHTML = emAberto.length ? emAberto.map(c => {
+    const t = data.servicos.filter(s=>s.clienteId===c.id).reduce((a,s)=>a+Number(s.valor),0);
+    const pag = data.pagamentos.find(p=>p.clienteId===c.id);
+    const pago = pag ? Number(pag.pago) : 0;
+    const dev = t - pago;
+    const pct = t > 0 ? (pago/t*100) : 0;
+    return `<div class="list-item" style="flex-direction:column;align-items:flex-start;">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <div style="font-weight:700">${c.nome}</div>
+        <div style="color:var(--red);font-weight:700">${fmt(dev)}</div>
+      </div>
+      <div class="progress-bar" style="width:100%"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${pct.toFixed(0)}% pago</div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><p>Nenhuma conta em aberto 🎉</p></div>';
+}
+
+// ---- CLIENTES ----
+function addCliente() {
+  const nome = document.getElementById('cliNome').value.trim();
+  const caminhao = document.getElementById('cliCaminhao').value.trim();
+  const placa = document.getElementById('cliPlaca').value.trim().toUpperCase();
+  if(!nome || !caminhao || !placa) { alert('Preencha nome, caminhão e placa!'); return; }
+  data.clientes.push({
+    id: uid(), nome, caminhao, placa,
+    tel: document.getElementById('cliTel').value,
+    ano: document.getElementById('cliAno').value,
+    cor: document.getElementById('cliCor').value,
+    obs: document.getElementById('cliObs').value,
+    created: today()
+  });
+  save();
+  ['cliNome','cliTel','cliCaminhao','cliPlaca','cliAno','cliCor','cliObs'].forEach(id => document.getElementById(id).value='');
+  renderClientes();
+  renderServicoSelects();
+  renderPagamentoSelect();
+  renderRelatorioSelect();
+}
+
+function renderClientes() {
+  const q = (document.getElementById('cliSearch')?.value||'').toLowerCase();
+  const list = data.clientes.filter(c => !q || c.nome.toLowerCase().includes(q) || c.placa.toLowerCase().includes(q) || c.caminhao.toLowerCase().includes(q));
+  const el = document.getElementById('clientesList');
+  if(!list.length) { el.innerHTML='<div class="empty-state"><div class="icon">👤</div><p>Nenhum cliente encontrado</p></div>'; return; }
+  el.innerHTML = list.map(c => {
+    const total = data.servicos.filter(s=>s.clienteId===c.id).reduce((a,s)=>a+Number(s.valor),0);
+    const pag = data.pagamentos.find(p=>p.clienteId===c.id);
+    const pago = pag ? Number(pag.pago) : 0;
+    const devendo = Math.max(0, total - pago);
+    return `<div class="client-card">
+      <div class="cc-plate">${c.placa}</div>
+      <div class="cc-name">${c.nome}</div>
+      <div class="cc-truck">🚛 ${c.caminhao}${c.ano?' · '+c.ano:''}${c.cor?' · '+c.cor:''}</div>
+      ${c.tel?`<div style="font-size:12px;color:var(--text-muted);margin-top:2px">📞 ${c.tel}</div>`:''}
+      ${c.obs?`<div style="font-size:12px;color:var(--text-muted);margin-top:2px">📝 ${c.obs}</div>`:''}
+      <div style="margin-top:10px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div class="cc-total">Total: ${fmt(total)}</div>
+        <div style="font-size:13px;color:var(--green)">Pago: ${fmt(pago)}</div>
+        ${devendo>0?`<div style="font-size:13px;color:var(--red)">Devendo: ${fmt(devendo)}</div>`:'<span class="badge badge-green">Quitado</span>'}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="editCliente('${c.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="delCliente('${c.id}')">🗑️ Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editCliente(id) {
+  const c = data.clientes.find(x=>x.id===id);
+  document.getElementById('editCliId').value = id;
+  document.getElementById('editCliNome').value = c.nome;
+  document.getElementById('editCliTel').value = c.tel||'';
+  document.getElementById('editCliCaminhao').value = c.caminhao;
+  document.getElementById('editCliPlaca').value = c.placa;
+  document.getElementById('editCliAno').value = c.ano||'';
+  document.getElementById('editCliCor').value = c.cor||'';
+  document.getElementById('editCliObs').value = c.obs||'';
+  openModal('modalEditCliente');
+}
+function saveEditCliente() {
+  const id = document.getElementById('editCliId').value;
+  const c = data.clientes.find(x=>x.id===id);
+  c.nome = document.getElementById('editCliNome').value;
+  c.tel = document.getElementById('editCliTel').value;
+  c.caminhao = document.getElementById('editCliCaminhao').value;
+  c.placa = document.getElementById('editCliPlaca').value.toUpperCase();
+  c.ano = document.getElementById('editCliAno').value;
+  c.cor = document.getElementById('editCliCor').value;
+  c.obs = document.getElementById('editCliObs').value;
+  save(); closeModal('modalEditCliente');
+  renderClientes(); renderServicoSelects(); renderPagamentoSelect(); renderRelatorioSelect();
+}
+function delCliente(id) {
+  if(!confirm('Excluir este cliente e todos os seus serviços?')) return;
+  data.clientes = data.clientes.filter(c=>c.id!==id);
+  data.servicos = data.servicos.filter(s=>s.clienteId!==id);
+  data.pagamentos = data.pagamentos.filter(p=>p.clienteId!==id);
+  save(); renderClientes(); renderServicoSelects(); renderPagamentoSelect();
+}
+
+// ---- SERVICOS ----
+function renderServicoSelects() {
+  ['srvCliente','srvFiltro'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const val = sel.value;
+    sel.innerHTML = selId==='srvCliente' ? '<option value="">Selecione um cliente...</option>' : '<option value="">Todos os clientes</option>';
+    data.clientes.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.nome} — ${c.placa}</option>`; });
+    sel.value = val;
+  });
+}
+function updatePlaca() {
+  const id = document.getElementById('srvCliente').value;
+  const c = data.clientes.find(x=>x.id===id);
+  document.getElementById('srvPlaca').value = c ? c.placa : '';
+}
+function addServico() {
+  const clienteId = document.getElementById('srvCliente').value;
+  const desc = document.getElementById('srvDesc').value.trim();
+  const valor = document.getElementById('srvValor').value;
+  if(!clienteId || !desc || !valor) { alert('Preencha cliente, serviço e valor!'); return; }
+  data.servicos.push({
+    id: uid(), clienteId, desc, valor: Number(valor),
+    data: document.getElementById('srvData').value,
+    pecas: document.getElementById('srvPecas').value,
+    mecanico: document.getElementById('srvMecanico').value
+  });
+  save();
+  ['srvDesc','srvValor','srvPecas','srvMecanico'].forEach(id => document.getElementById(id).value='');
+  renderServicos(); renderDashboard();
+}
+function renderServicos() {
+  const filtro = document.getElementById('srvFiltro')?.value||'';
+  const list = data.servicos.filter(s => !filtro || s.clienteId===filtro);
+  const tbody = document.getElementById('servicosTable');
+  if(!list.length) { tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum serviço encontrado</td></tr>'; return; }
+  tbody.innerHTML = list.map(s => {
+    const c = data.clientes.find(x=>x.id===s.clienteId);
+    return `<tr>
+      <td><span style="font-family:Share Tech Mono;font-size:12px">${s.data||'-'}</span></td>
+      <td>${c?c.nome:'—'}</td>
+      <td><span style="font-family:Share Tech Mono;background:var(--accent);color:#000;padding:2px 8px;font-size:11px;font-weight:700">${c?c.placa:'—'}</span></td>
+      <td style="max-width:200px">${s.desc}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${s.pecas||'—'}</td>
+      <td style="font-size:12px">${s.mecanico||'—'}</td>
+      <td style="color:var(--green);font-weight:700">${fmt(s.valor)}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editServico('${s.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delServico('${s.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function editServico(id) {
+  const s = data.servicos.find(x=>x.id===id);
+  document.getElementById('editSrvId').value = id;
+  document.getElementById('editSrvDesc').value = s.desc;
+  document.getElementById('editSrvValor').value = s.valor;
+  document.getElementById('editSrvPecas').value = s.pecas||'';
+  openModal('modalEditServico');
+}
+function saveEditServico() {
+  const id = document.getElementById('editSrvId').value;
+  const s = data.servicos.find(x=>x.id===id);
+  s.desc = document.getElementById('editSrvDesc').value;
+  s.valor = Number(document.getElementById('editSrvValor').value);
+  s.pecas = document.getElementById('editSrvPecas').value;
+  save(); closeModal('modalEditServico'); renderServicos(); renderDashboard();
+}
+function delServico(id) {
+  if(!confirm('Excluir este serviço?')) return;
+  data.servicos = data.servicos.filter(s=>s.id!==id);
+  save(); renderServicos(); renderDashboard();
+}
+
+// ---- PAGAMENTOS ----
+function renderPagamentoSelect() {
+  const sel = document.getElementById('pagCliente');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Selecione um cliente...</option>';
+  data.clientes.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.nome} — ${c.placa}</option>`; });
+  sel.value = val;
+}
+function renderPagamento() {
+  const id = document.getElementById('pagCliente').value;
+  const area = document.getElementById('pagamentoArea');
+  if(!id) { area.innerHTML=''; return; }
+  const c = data.clientes.find(x=>x.id===id);
+  const servs = data.servicos.filter(s=>s.clienteId===id);
+  const total = servs.reduce((a,s)=>a+Number(s.valor),0);
+  let pag = data.pagamentos.find(p=>p.clienteId===id);
+  if(!pag) { pag = {clienteId:id, pago:0, historico:[]}; data.pagamentos.push(pag); save(); }
+  const pago = Number(pag.pago||0);
+  const devendo = Math.max(0, total - pago);
+  const status = devendo<=0 ? 'QUITADO' : pago===0 ? 'PENDENTE' : 'PARCIAL';
+  const statusClass = devendo<=0 ? 'badge-green' : pago===0 ? 'badge-red' : 'badge-yellow';
+
+  area.innerHTML = `
+    <div class="section">
+      <div class="section-title">Situação de ${c.nome} — ${c.placa}</div>
+      <div class="payment-row">
+        <div><div class="payment-label">Total dos Serviços</div><div class="payment-value blue">${fmt(total)}</div></div>
+        <div><div class="payment-label">Total Pago</div><div class="payment-value green">${fmt(pago)}</div></div>
+        <div><div class="payment-label">Saldo Devedor</div><div class="payment-value ${devendo>0?'red':'green'}">${fmt(devendo)}</div></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <span class="badge ${statusClass}">${status}</span>
+        ${total>0?`<div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:${Math.min(100,pago/total*100)}%"></div></div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">${Math.min(100,pago/total*100).toFixed(1)}% pago</div>`:''}
+      </div>
+      <div class="form-row" style="max-width:500px">
+        <div class="field"><label>Valor Recebido (R$)</label><input type="number" id="pagValor" placeholder="0,00" step="0.01" min="0"></div>
+        <div class="field"><label>Forma de Pagamento</label>
+          <select id="pagForma">
+            <option>Dinheiro</option><option>PIX</option><option>Cartão Débito</option><option>Cartão Crédito</option><option>Cheque</option><option>Transferência</option>
+          </select>
+        </div>
+        <div class="field" style="align-self:flex-end"><button class="btn btn-success" onclick="registrarPagamento('${id}')">💰 REGISTRAR PAGAMENTO</button></div>
+      </div>
+      ${pag.historico&&pag.historico.length?`
+      <div style="margin-top:20px">
+        <div class="section-title" style="font-size:14px">Histórico de Pagamentos</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Data</th><th>Valor</th><th>Forma</th></tr></thead>
+          <tbody>${pag.historico.map(h=>`<tr><td>${h.data}</td><td style="color:var(--green)">${fmt(h.valor)}</td><td>${h.forma}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>`:''}
+    </div>
+    <div class="section">
+      <div class="section-title">Serviços Realizados</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Serviço</th><th>Peças</th><th>Mecânico</th><th>Valor</th></tr></thead>
+        <tbody>${servs.length?servs.map(s=>`<tr><td>${s.data||'—'}</td><td>${s.desc}</td><td>${s.pecas||'—'}</td><td>${s.mecanico||'—'}</td><td style="color:var(--green)">${fmt(s.valor)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum serviço</td></tr>'}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+function registrarPagamento(clienteId) {
+  const valor = Number(document.getElementById('pagValor').value);
+  const forma = document.getElementById('pagForma').value;
+  if(!valor || valor<=0) { alert('Informe o valor recebido!'); return; }
+  let pag = data.pagamentos.find(p=>p.clienteId===clienteId);
+  if(!pag) { pag = {clienteId, pago:0, historico:[]}; data.pagamentos.push(pag); }
+  pag.pago = (Number(pag.pago)||0) + valor;
+  if(!pag.historico) pag.historico = [];
+  pag.historico.push({ data: today(), valor, forma });
+  save(); renderPagamento(); renderDashboard();
+}
+
+// ---- GASTOS ----
+function addGasto() {
+  const categ = document.getElementById('gastoCateg').value;
+  const desc = document.getElementById('gastoDesc').value.trim();
+  const valor = Number(document.getElementById('gastoValor').value);
+  const dt = document.getElementById('gastoData').value;
+  if(!desc || !valor) { alert('Preencha descrição e valor!'); return; }
+  data.gastos.push({ id: uid(), categ, desc, valor, data: dt||today() });
+  save(); document.getElementById('gastoDesc').value=''; document.getElementById('gastoValor').value='';
+  renderGastos(); renderGastoCards(); renderDashboard();
+}
+function renderGastoFiltros() {
+  const categorias = [...new Set(data.gastos.map(g=>g.categ))];
+  const sel = document.getElementById('gastoFiltro');
+  sel.innerHTML = '<option value="">Todas</option>';
+  categorias.forEach(c => sel.innerHTML += `<option>${c}</option>`);
+
+  const meses = document.getElementById('gastoMes');
+  meses.innerHTML = '<option value="">Todos os meses</option>';
+  const now = new Date();
+  for(let i=0;i<12;i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    meses.innerHTML += `<option value="${val}">${label}</option>`;
+  }
+}
+function renderGastoCards() {
+  const por = {};
+  data.gastos.forEach(g => { por[g.categ] = (por[g.categ]||0) + g.valor; });
+  const total = Object.values(por).reduce((a,v)=>a+v,0);
+  const colors = ['','green','red','blue','orange'];
+  let i=0;
+  document.getElementById('gastoCards').innerHTML = `<div class="card"><div class="card-label">Total de Gastos</div><div class="card-value red">${fmt(total)}</div></div>` +
+    Object.entries(por).map(([k,v]) => `<div class="card ${colors[i++%colors.length]}"><div class="card-label">${k}</div><div class="card-value">${fmt(v)}</div></div>`).join('');
+}
+function renderGastos() {
+  const filtro = document.getElementById('gastoFiltro')?.value||'';
+  const mes = document.getElementById('gastoMes')?.value||'';
+  let list = data.gastos.filter(g => (!filtro||g.categ===filtro) && (!mes||g.data.startsWith(mes)));
+  const tbody = document.getElementById('gastosTable');
+  if(!list.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhum gasto registrado</td></tr>'; return; }
+  tbody.innerHTML = list.map(g => `<tr>
+    <td><span style="font-family:Share Tech Mono;font-size:12px">${g.data}</span></td>
+    <td><span class="badge badge-yellow">${g.categ}</span></td>
+    <td>${g.desc}</td>
+    <td style="color:var(--red);font-weight:700">${fmt(g.valor)}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="delGasto('${g.id}')">🗑️</button></td>
+  </tr>`).join('');
+}
+function delGasto(id) {
+  if(!confirm('Excluir este gasto?')) return;
+  data.gastos = data.gastos.filter(g=>g.id!==id);
+  save(); renderGastos(); renderGastoCards(); renderDashboard();
+}
+
+// ---- RELATÓRIOS / NOTA ----
+function renderRelatorioSelect() {
+  const sel = document.getElementById('relCliente');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  data.clientes.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nome} — ${c.placa}</option>`);
+  sel.value = val;
+}
+function previewNota() {
+  const id = document.getElementById('relCliente').value;
+  if(!id) { document.getElementById('notaPreview').innerHTML=''; return; }
+  document.getElementById('notaPreview').innerHTML = `<div class="section"><div class="section-title">Pré-visualização</div>${buildReceiptHTML(id)}</div>`;
+}
+function buildReceiptHTML(clienteId) {
+  const c = data.clientes.find(x=>x.id===clienteId);
+  const servs = data.servicos.filter(s=>s.clienteId===clienteId);
+  const total = servs.reduce((a,s)=>a+Number(s.valor),0);
+  const pag = data.pagamentos.find(p=>p.clienteId===clienteId);
+  const pago = pag ? Number(pag.pago||0) : 0;
+  const devendo = Math.max(0, total - pago);
+  const dt = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  return `<div class="receipt">
+    <div class="receipt-header">
+      <h1>⚙️ OFICINA MECÂNICA DO ABEL</h1>
+      <p>Serviços em Caminhões e Veículos Pesados</p>
+      <p>Data de emissão: ${dt}</p>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Dados do Cliente</div>
+      <div class="receipt-info">
+        <div><strong>Nome:</strong> ${c.nome}</div>
+        <div><strong>Telefone:</strong> ${c.tel||'—'}</div>
+        <div><strong>Caminhão:</strong> ${c.caminhao}</div>
+        <div><strong>Placa:</strong> ${c.placa}</div>
+        <div><strong>Ano:</strong> ${c.ano||'—'}</div>
+        <div><strong>Cor:</strong> ${c.cor||'—'}</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Serviços Realizados</div>
+    <table class="receipt-table">
+      <thead><tr><th>Data</th><th>Serviço</th><th>Peças</th><th>Mecânico</th><th style="text-align:right">Valor</th></tr></thead>
+      <tbody>
+        ${servs.length?servs.map(s=>`<tr><td>${s.data||'—'}</td><td>${s.desc}</td><td>${s.pecas||'—'}</td><td>${s.mecanico||'—'}</td><td style="text-align:right">R$ ${Number(s.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">Nenhum serviço</td></tr>'}
+      </tbody>
+    </table>
+    <div class="receipt-total">
+      <div class="total-line"><span>Total dos Serviços:</span><span>R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+      <div class="total-line"><span>Valor Pago:</span><span style="color:green">R$ ${pago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+      <div class="total-line grand"><span>SALDO DEVEDOR:</span><span style="color:${devendo>0?'red':'green'}">R$ ${devendo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+    </div>
+    ${c.obs?`<div style="margin-top:16px;padding:12px;background:#f5f5f5;font-size:13px"><strong>Observações:</strong> ${c.obs}</div>`:''}
+    <div class="receipt-footer">
+      <p>Oficina Mecânica do Abel — Obrigado pela preferência!</p>
+      <p style="margin-top:4px">Esta nota não tem valor fiscal</p>
+    </div>
+  </div>`;
+}
+function imprimirNota() {
+  const id = document.getElementById('relCliente').value;
+  if(!id) { alert('Selecione um cliente!'); return; }
+  const html = buildReceiptHTML(id);
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Nota - Oficina do Abel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body{margin:0;padding:20px;background:#fff;font-family:Rajdhani,sans-serif}
+      .receipt{max-width:700px;margin:0 auto;padding:40px}
+      .receipt-header{text-align:center;border-bottom:2px solid #000;padding-bottom:16px;margin-bottom:16px}
+      .receipt-header h1{font-family:'Bebas Neue';font-size:28px;letter-spacing:2px}
+      .receipt-header p{font-size:13px;color:#555}
+      .receipt-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+      .receipt-info div{font-size:14px}
+      table{width:100%;border-collapse:collapse;margin-bottom:16px}
+      th{background:#000;color:#fff;padding:8px 12px;text-align:left;font-size:12px;letter-spacing:1px}
+      td{padding:8px 12px;border-bottom:1px solid #ddd;font-size:13px}
+      .receipt-total{text-align:right;border-top:2px solid #000;padding-top:12px}
+      .total-line{display:flex;justify-content:space-between;margin-bottom:4px;font-size:14px}
+      .grand{font-family:'Bebas Neue';font-size:22px}
+      .receipt-footer{text-align:center;margin-top:20px;font-size:12px;color:#777;border-top:1px solid #ddd;padding-top:12px}
+      @media print{@page{margin:10mm}}
+    </style></head><body>${html}<br><button onclick="window.print()" style="display:block;margin:20px auto;padding:12px 30px;background:#000;color:#fff;border:none;font-size:16px;cursor:pointer;font-family:Rajdhani;letter-spacing:2px">🖨️ IMPRIMIR</button></body></html>`);
+  win.document.close();
+}
+
+// ---- MODALS ----
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+</script>
+</body>
+</html>
