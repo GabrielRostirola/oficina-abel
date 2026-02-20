@@ -1,0 +1,12 @@
+{
+  "name": "oficina-abel",
+  "version": "1.0.0",
+  "description": "Sistema de gestão da Oficina do Abel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
